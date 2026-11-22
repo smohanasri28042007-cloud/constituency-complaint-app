@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intelligent Constituency Complaint Application</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#172554}
+header{background:#123b70;color:white;padding:22px;text-align:center}
+header h1{font-size:23px;margin:0 0 8px}
+nav{background:#0b2d55;padding:13px;text-align:center;color:white}
+main{max-width:950px;margin:22px auto;padding:12px}
+.card{background:white;padding:20px;border-radius:12px;margin-bottom:18px;box-shadow:0 2px 9px #0001}
+h2{color:#123b70;margin-top:0}
+input,select,textarea{width:100%;padding:12px;margin:7px 0 14px;border:1px solid #cbd5e1;border-radius:7px;font-size:15px}
+button{background:#1763ad;color:white;border:0;padding:11px 17px;border-radius:7px;cursor:pointer}
+button:hover{background:#0b477f}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{background:#eaf2ff;padding:14px;text-align:center;border-radius:9px}
+.stat strong{display:block;font-size:24px;margin-top:7px}
+.complaint{border:1px solid #dbe3ed;padding:13px;border-radius:8px;margin:10px 0}
+.tag{font-weight:bold}
+.small{color:#64748b;font-size:13px}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<header>
+<h1>Intelligent Constituency Complaint Application</h1>
+<p>Public Complaint Management Portal</p>
+</header>
+<nav>Home | Register Complaint | Admin Dashboard</nav>
+<main>
+<section class="card">
+<h2>Register a Complaint</h2>
+<form id="complaintForm">
+<label>Full Name</label>
+<input id="name" required placeholder="Enter your name">
+<label>Complaint Category</label>
+<select id="category" required>
+<option value="">Select category</option>
+<option>Road</option><option>Water Supply</option>
+<option>Electricity</option><option>Sanitation</option>
+<option>Other</option>
+</select>
+<label>Location</label>
+<input id="location" required placeholder="Enter area or location">
+<label>Severity</label>
+<select id="severity" required>
+<option value="">Select severity</option>
+<option>High</option><option>Medium</option><option>Low</option>
+</select>
+<label>Complaint Description</label>
+<textarea id="description" required rows="4" placeholder="Describe your complaint"></textarea>
+<button type="submit">Submit Complaint</button>
+</form>
+<p id="message" role="status"></p>
+</section>
+
+<section class="card">
+<h2>Admin Dashboard</h2>
+<div class="stats">
+<div class="stat">Total<strong id="total">0</strong></div>
+<div class="stat">Pending<strong id="pending">0</strong></div>
+<div class="stat">High Priority<strong id="high">0</strong></div>
+<div class="stat">Resolved<strong id="resolved">0</strong></div>
+</div>
+<h2 style="margin-top:22px">Complaint Records</h2>
+<label>Filter complaints</label>
+<select id="filter">
+<option value="All">All Complaints</option>
+<option value="Pending">Pending</option>
+<option value="Resolved">Resolved</option>
+<option value="High">High Priority</option>
+</select>
+<div id="complaintList"></div>
+</section>
+</main>
+<script>
+const form=document.getElementById("complaintForm");
+const list=document.getElementById("complaintList");
+const filter=document.getElementById("filter");
+let complaints=JSON.parse(localStorage.getItem("complaints")||"[]");
+
+function save(){
+localStorage.setItem("complaints",JSON.stringify(complaints));
+render();
+}
+form.addEventListener("submit",function(e){
+e.preventDefault();
+const severity=document.getElementById("severity").value;
+complaints.unshift({
+id:Date.now(),
+name:document.getElementById("name").value.trim(),
+category:document.getElementById("category").value,
+location:document.getElementById("location").value.trim(),
+severity:severity,
+priority:severity,
+description:document.getElementById("description").value.trim(),
+status:"Pending"
+});
+save();
+form.reset();
+document.getElementById("message").textContent="Complaint submitted successfully!";
+});
+filter.addEventListener("change",render);
+
+function render(){
+document.getElementById("total").textContent=complaints.length;
+document.getElementById("pending").textContent=complaints.filter(c=>c.status==="Pending").length;
+document.getElementById("high").textContent=complaints.filter(c=>c.priority==="High").length;
+document.getElementById("resolved").textContent=complaints.filter(c=>c.status==="Resolved").length;
+list.innerHTML="";
+let shown=complaints.filter(c=>{
+if(filter.value==="All")return true;
+if(filter.value==="High")return c.priority==="High";
+return c.status===filter.value;
+});
+if(shown.length===0){list.textContent="No complaints found.";return;}
+shown.forEach(c=>{
+const item=document.createElement("div");
+item.className="complaint";
+const heading=document.createElement("h3");
+heading.textContent="#"+c.id+" - "+c.category;
+const details=document.createElement("p");
+details.textContent="Name: "+c.name+" | Location: "+c.location;
+const priority=document.createElement("p");
+priority.textContent="Priority: "+c.priority+" | Status: "+c.status;
+priority.className="tag";
+const description=document.createElement("p");
+description.textContent=c.description;
+const button=document.createElement("button");
+button.textContent=c.status==="Pending"?"Mark as Resolved":"Mark as Pending";
+button.addEventListener("click",()=>{
+c.status=c.status==="Pending"?"Resolved":"Pending";
+save();
+});
+item.append(heading,details,priority,description,button);
+list.appendChild(item);
+});
+}
+render();
+</script>
+</body>
+</html>
